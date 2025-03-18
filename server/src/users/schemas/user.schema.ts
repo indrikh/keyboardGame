@@ -1,7 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
-export type UserDocument = User & Document;
+// Расширяем UserDocument, чтобы включить метод toObject
+export interface UserDocument extends User, Document {
+  toObject(): any;
+}
 
 @Schema()
 export class User {
