@@ -10,7 +10,8 @@ export class UsersController {
   @Get('profile/:id')
   async getProfile(@Param('id') id: string) {
     const user = await this.usersService.findById(id);
-    const { password, ...result } = user.toObject();
+    // Используем деструктуризацию без метода toObject
+    const { password, ...result } = user as any;
     return result;
   }
 
