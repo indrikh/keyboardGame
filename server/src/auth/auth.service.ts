@@ -15,7 +15,8 @@ export class AuthService {
     const user = await this.usersService.findOne(email);
     
     if (user && await bcrypt.compare(password, user.password)) {
-      const { password, ...result } = user.toObject();
+      // Используем деструктуризацию без метода toObject
+      const { password, ...result } = user as any;
       return result;
     }
     
@@ -39,7 +40,8 @@ export class AuthService {
     }
     
     const user = await this.usersService.create(createUserDto);
-    const { password, ...result } = user.toObject();
+    // Используем деструктуризацию без метода toObject
+    const { password, ...result } = user as any;
     
     return this.login(result);
   }
