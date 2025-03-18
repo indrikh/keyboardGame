@@ -14,12 +14,6 @@ services:
       - mongodb_data:/data/db
     networks:
       - keyboard-game-network
-    healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongo mongodb:27017/test --quiet
-      interval: 10s
-      timeout: 10s
-      retries: 5
-      start_period: 40s
 
   backend:
     build:
@@ -30,8 +24,7 @@ services:
     ports:
       - "3001:3001"
     depends_on:
-      mongodb:
-        condition: service_healthy
+      - mongodb
     environment:
       - NODE_ENV=production
       - MONGODB_URI=mongodb://root:rootpassword@mongodb:27017/keyboard-game?authSource=admin
@@ -39,12 +32,6 @@ services:
       - CLIENT_URL=http://localhost:3000
     networks:
       - keyboard-game-network
-    healthcheck:
-      test: wget --no-verbose --tries=1 --spider http://localhost:3001 || exit 1
-      interval: 10s
-      timeout: 10s
-      retries: 5
-      start_period: 40s
 
   frontend:
     build:
@@ -55,8 +42,7 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:3001
     networks:
