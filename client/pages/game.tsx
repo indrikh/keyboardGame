@@ -15,6 +15,8 @@ export default function Game() {
   const [wpm, setWpm] = useState(0);
   const [language, setLanguage] = useState('ru');
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -22,12 +24,34 @@ export default function Game() {
   }, [language]);
 
   const loadText = async () => {
+    setIsLoading(true);
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/game/text?language=${language}`);
-      setText(response.data);
+      // Если сервер недоступен, используем заглушку
+      let textData;
+      try {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/game/text?language=${language}`);
+        textData = response.data;
+      } catch (err) {
+        console.error('Failed to load from API, using fallback text', err);
+        // Заглушка для текста, если сервер не отвечает
+        textData = {
+          _id: 'fallback-id',
+          content: language === 'ru' 
+            ? 'Быстрая коричневая лиса прыгает через ленивую собаку. Это стандартная фраза для проверки навыка печати.'
+            : 'The quick brown fox jumps over the lazy dog. This pangram contains every letter of the English alphabet.',
+          language,
+          difficulty: 1
+        };
+      }
+      
+      setText(textData);
       resetGame();
+      setError('');
     } catch (error) {
       console.error('Error loading text:', error);
+      setError('Ошибка загрузки текста. Попробуйте еще раз.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -100,7 +124,7 @@ export default function Game() {
   const saveResult = async (speed: number, accuracy: number) => {
     try {
       await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/game/result`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/game/result`,
         {
           userId: user._id,
           speed,
@@ -139,7 +163,18 @@ export default function Game() {
           </div>
         </div>
 
-        {text ? (
+        {error && (
+          <div className="bg-red-100 p-4 rounded-lg mb-4 text-red-700">
+            {error}
+          </div>
+        )}
+
+        {isLoading ? (
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
+            <p className="mt-2">Загрузка текста...</p>
+          </div>
+        ) : text ? (
           <>
             <div className="p-4 bg-gray-100 rounded-lg mb-4 text-lg">
               {countdown !== null ? (
@@ -206,7 +241,7 @@ export default function Game() {
             )}
           </>
         ) : (
-          <div className="text-center py-12">Загрузка текста...</div>
+          <div className="text-center py-12">Ошибка загрузки текста</div>
         )}
       </div>
     </Layout>
